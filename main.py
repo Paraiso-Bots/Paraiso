@@ -72,7 +72,7 @@ async def work(ctx):
         else:
             await ctx.respond("You are too tired to work")
     else:
-        await ctx.respond("You are not in the game")
+        await ctx.respond("You are not a member of Paraiso. Please run `/join` to join the game.")
 
 @work.error
 async def work_error(ctx, error):
@@ -88,6 +88,9 @@ async def Help(ctx):
 
 @bot.slash_command(name = "buy", description = "Buy something you need") 
 async def Buy(ctx, item: Option(str, "What do you want to buy? ", autocomplete=discord.utils.basic_autocomplete(get_shop_items))):
+    if not ifexists(ctx.author.id):
+        await ctx.respond("You are not a member of Paraiso. Please run `/join` to join the game.")
+        return
     if item in shop:
         user = User(ctx.author.id)
         user.load()
