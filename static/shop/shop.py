@@ -12,7 +12,9 @@ shop = {
     "egg": 6,
     "potato": 7,
     "butter": 14,
-    "cola": 14
+    "cola": 14,
+    "house":500,
+    "car":300
     
     
 }
