@@ -101,5 +101,23 @@ async def Buy(ctx, item: Option(str, "What do you want to buy? ", autocomplete=d
             await ctx.respond(f"You have bought {item} for {shop[item]} coins. You now have {user.money} coins")
 
 
+@bot.slash_command(name = "inventory", description = "Check your inventory")
+async def Inventory(ctx, user: discord.Member = None):
+    if user == None:
+        user = ctx.author
+    if not ifexists(user.id):
+        await ctx.respond("You are not a member of Paraiso. Please run `/join` to join the game.")
+        return
+    user = User(user.id)
+    user.load()
+    if len(user.inventory) == 0:
+        await ctx.respond("Your inventory is empty")
+    else:
+        constructMessage = ""
+        for item in user.inventory:
+            constructMessage += f"{item}: x{user.inventory.count(item)}\n"
+        await ctx.respond(constructMessage)
+
+
 token = os.getenv("DISCORD_TOKEN")
 bot.run(token)
