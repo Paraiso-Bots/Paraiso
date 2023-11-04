@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from management.users.user import User
 from management.users.ifexists import ifexists
 
-from static.shop.shop import shop
+from static.shop.shop import shop, get_shop_items
 
 
 load_dotenv()
@@ -87,7 +87,7 @@ async def Help(ctx):
     await ctx.respond("Here are all commands of the bot: \n\n 1)/balance \n\n 2)/help \n\n 3)/join \n\n 4)work")
 
 @bot.slash_command(name = "buy", description = "Buy something you need") 
-async def Buy(ctx, item: Option(str, "What do you want to buy? ")):
+async def Buy(ctx, item: Option(str, "What do you want to buy? ", autocomplete=discord.utils.basic_autocomplete(get_shop_items))):
     if item in shop:
         user = User(ctx.author.id)
         user.load()
@@ -95,7 +95,7 @@ async def Buy(ctx, item: Option(str, "What do you want to buy? ")):
             user.remove_money(shop[item])
             user.add_item(item)
             user.save()
-            await ctx.respond(f"You have bought {item}")
+            await ctx.respond(f"You have bought {item} for {shop[item]} coins. You now have {user.money} coins")
 
 
 token = os.getenv("DISCORD_TOKEN")
