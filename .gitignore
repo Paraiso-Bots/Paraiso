@@ -3,3 +3,4 @@ VirtualEnvironment/
 __pycache__/
 .env
 users.json
+settings.json

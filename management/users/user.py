@@ -1,5 +1,8 @@
 import json
 import os
+from .constants import Constants
+
+constants = Constants()
 
 # A class for managing users. It consists of health, energy, mood, money, inventory
 class User:
@@ -47,14 +50,22 @@ class User:
     
     def add_item(self, item):
         self.inventory.append(item)
+        if self.inventory.count(item) > constants.max_item_amount:
+            # Remove all items that are over the limit
+            for i in range(self.inventory.count(item) - constants.max_item_amount):
+                self.inventory.remove(item)
         self.save()
     
     def remove_item(self, item):
         self.inventory.remove(item)
+        if self.inventory.count(item) < constants.min_item_amount:
+            self.inventory.remove(item)
         self.save()
     
     def add_money(self, amount):
         self.money += amount
+        if self.money > constants.max_money:
+            self.money = constants.max_money
         self.save()
     
     def remove_money(self, amount):
@@ -63,26 +74,38 @@ class User:
     
     def add_health(self, amount):
         self.health += amount
+        if self.health > constants.max_health:
+            self.health = constants.max_health
         self.save()
     
     def remove_health(self, amount):
         self.health -= amount
+        if self.health < constants.min_health:
+            self.health = constants.min_health
         self.save()
 
     def add_energy(self, amount):
         self.energy += amount
+        if self.energy > constants.max_energy:
+            self.energy = constants.max_energy
         self.save()
     
     def remove_energy(self, amount):
         self.energy -= amount
+        if self.energy < constants.min_energy:
+            self.energy = constants.min_energy
         self.save()
 
     def add_mood(self, amount):
         self.mood += amount
+        if self.mood > constants.max_mood:
+            self.mood = constants.max_mood
         self.save()
     
     def remove_mood(self, amount):
         self.mood -= amount
+        if self.mood < constants.min_mood:
+            self.mood = constants.min_mood
         self.save()
 
     def get_health(self):
