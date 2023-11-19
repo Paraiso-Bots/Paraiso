@@ -8,12 +8,10 @@ import asyncio
 import json
 from dotenv import load_dotenv
 
-
 from management.users.user import User
 from management.users.ifexists import ifexists
 
 from static.shop.shop import shop, get_shop_items
-
 
 load_dotenv()
 
@@ -25,30 +23,33 @@ bot.remove_command("help")
 async def on_ready():
     print("Bot is ready")
     print("Logged in as: " + bot.user.name + "\n")
-    # Status of the bot must be set to "Watching users"
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="you"))
-
 
 @bot.slash_command(name="join", description="Join the game")
 async def join(ctx):
     if ifexists(ctx.author.id):
-        await ctx.respond("You are already in the game")
+        embed = discord.Embed(title="You are already a member of Paraiso", description="You can't join the game twice. However, you can use an alternative Discord account.", color=discord.Color.red())
+        await ctx.respond(embed=embed)
     else:
         user = User(ctx.author.id)
         user.save()
-        await ctx.respond("You have joined the game")
+        embed = discord.Embed(title="Welcome to Paraiso!", description="You have joined the game. Hope you'll have fun!", color=discord.Color.green())
+        await ctx.respond(embed=embed)
 
-@bot.slash_command(name = "balance", descriprion = "Check your own balance or another user's balance")
+@bot.slash_command(name="balance", description="Check your own balance or another user's balance")
 async def balance(ctx, user: discord.Member = None):
-    if user == None:
-        user = ctx.author
+    uUser = user
+    if uUser is None:
+        uUser = ctx.author
     
-    if ifexists(user.id):
-        user = User(user.id)
+    if ifexists(uUser.id):
+        user = User(uUser.id)
         user.load()
-        await ctx.respond(f"{user.money} coins")
+        embed = discord.Embed(title=f"{uUser.display_name}'s balance", description=f"{uUser.mention} has {user.money} coins", color=discord.Color.green())
+        await ctx.respond(embed=embed)
     else:
-        await ctx.respond("This user is not in the game")
+        embed = discord.Embed(title="This user is not a member of Paraiso", description="This user is not a member of Paraiso. A user is required to initialize their account by running `/join` before getting a balance.", color=discord.Color.red())
+        await ctx.respond(embed=embed)
 
 @bot.slash_command(name="work", description="Work to earn money")
 @commands.cooldown(1, 3600, commands.BucketType.user)
@@ -58,7 +59,6 @@ async def work(ctx):
         user.load()
         if user.energy > 0:
             amount = random.randint(30, 70)
-            # Modifiers
             conv_happiness = user.mood / 100
             conv_health = user.health / 100
             conv_energy = user.energy / 100
@@ -68,28 +68,30 @@ async def work(ctx):
             energyToRemove = random.randint(7, 17)
             user.remove_energy(energyToRemove)
             user.save()
-            await ctx.respond(f"You have earned {amount} coins, you now have {user.money} coins. You also have lost {energyToRemove} energy, you now have {user.energy} energy.")
+            embed = discord.Embed(title="Work complete!", description=f"You have earned {amount} coins, you now have {user.money} coins. You also have lost {energyToRemove} energy, having {user.energy} energy left.", color=discord.Color.green())
+            await ctx.respond(embed=embed)
         else:
-            await ctx.respond("You are too tired to work")
+            embed = discord.Embed(title="Chill out!", description="You are too tired to work. Try again later", color=discord.Color.red())
+            await ctx.respond(embed=embed)
     else:
-        await ctx.respond("You are not a member of Paraiso. Please run `/join` to join the game.")
+        embed = discord.Embed(title="Join Paraiso first!", description="You aren't a member of Paraiso... yet. Please run `/join` to join the game.", color=discord.Color.red())
+        await ctx.respond(embed=embed)
 
 @work.error
 async def work_error(ctx, error):
     if isinstance(error, commands.CommandOnCooldown):
-        await ctx.respond(f"You are on cooldown, try again in {round(error.retry_after)} seconds. Note that you can only work once per hour")
+        embed = discord.Embed(title="Easy there!", description=f"You are on cooldown, try again later. Note that you can only work once per hour. Please wait for the cooldown ({round(error.retry_after)} seconds)", color=discord.Color.red())
+        await ctx.respond(embed=embed)
 
-
-   
-
-@bot.slash_command(name="help", descriptiom="to help users with learning new commands")
+@bot.slash_command(name="help", description="To help users with learning new commands")
 async def Help(ctx):
-    await ctx.respond("Here are all commands of the bot: \n\n 1)/balance \n\n 2)/help \n\n 3)/join \n\n 4)work")
+    embed = discord.Embed(title="Help", description="Here are all commands of the bot: \n\n 1. `/balance` - Check your own balance or another user's balance \n\n 2. `/help` - This! \n\n 3. `/join` - Join the game \n\n 4. `/work` - Work to earn money", color=discord.Color.purple())
+    await ctx.respond(embed=embed)
 
-@bot.slash_command(name = "buy", description = "Buy something you need") 
+@bot.slash_command(name="buy", description="Buy something you need") 
 async def Buy(ctx, item: Option(str, "What do you want to buy? ", autocomplete=discord.utils.basic_autocomplete(get_shop_items))):
     if not ifexists(ctx.author.id):
-        await ctx.respond("You are not a member of Paraiso. Please run `/join` to join the game.")
+        embed = discord.Embed(title="Join Paraiso first!", description="You aren't a member of Paraiso... yet. Please run `/join` to join the game.", color=discord.Color.red())
         return
     if item in shop:
         user = User(ctx.author.id)
@@ -98,26 +100,37 @@ async def Buy(ctx, item: Option(str, "What do you want to buy? ", autocomplete=d
             user.remove_money(shop[item])
             user.add_item(item)
             user.save()
-            await ctx.respond(f"You have bought {item} for {shop[item]} coins. You now have {user.money} coins")
+            embed = discord.Embed(title="Purchase Successful", description=f"You have bought {item} for {shop[item]} coins. You now have {user.money} coins", color=discord.Color.green())
+            await ctx.respond(embed=embed)
+        else:
+            embed = discord.Embed(title="Insufficient Funds", description=f"You do not have enough coins to buy {item}. You have {user.money} coins", color=discord.Color.red())
+            await ctx.respond(embed=embed)
+    else:
+        embed = discord.Embed(title="Invalid Item", description=f"{item} is not available in the shop.", color=discord.Color.red())
+        await ctx.respond(embed=embed)
 
-
-@bot.slash_command(name = "inventory", description = "Check your inventory")
+@bot.slash_command(name="inventory", description="Check your inventory")
 async def Inventory(ctx, user: discord.Member = None):
-    if user == None:
-        user = ctx.author
-    if not ifexists(user.id):
+    uUser = user
+    if uUser is None:
+        uUser = ctx.author
+    if not ifexists(uUser.id):
         await ctx.respond("You are not a member of Paraiso. Please run `/join` to join the game.")
         return
-    user = User(user.id)
+    user = User(uUser.id)
     user.load()
     if len(user.inventory) == 0:
-        await ctx.respond("Your inventory is empty")
+        embed = discord.Embed(title="Nothing inside...", description=f"The inventory of {uUser.mention}", color=discord.Color.yellow())
+        await ctx.respond(embed=embed)
     else:
-        constructMessage = ""
+        embed = discord.Embed(title=f"Inventory of {uUser.name}", description="", color=discord.Color.green())
+        scanned_already = []
         for item in user.inventory:
-            constructMessage += f"{item}: x{user.inventory.count(item)}\n"
-        await ctx.respond(constructMessage)
-
+            if item in scanned_already:
+                continue
+            embed.description += f"**{item}** x{user.inventory.count(item)}\n"
+            scanned_already.append(item)
+        await ctx.respond(embed=embed)
 
 token = os.getenv("DISCORD_TOKEN")
 bot.run(token)
