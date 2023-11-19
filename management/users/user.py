@@ -58,8 +58,6 @@ class User:
     
     def remove_item(self, item):
         self.inventory.remove(item)
-        if self.inventory.count(item) < constants.min_item_amount:
-            self.inventory.remove(item)
         self.save()
     
     def add_money(self, amount):
@@ -73,37 +71,37 @@ class User:
         self.save()
     
     def add_health(self, amount):
-        self.health += amount
+        self.health += int(amount)
         if self.health > constants.max_health:
             self.health = constants.max_health
         self.save()
     
     def remove_health(self, amount):
-        self.health -= amount
+        self.health -= int(amount)
         if self.health < constants.min_health:
             self.health = constants.min_health
         self.save()
 
     def add_energy(self, amount):
-        self.energy += amount
+        self.energy += int(amount)
         if self.energy > constants.max_energy:
             self.energy = constants.max_energy
         self.save()
     
     def remove_energy(self, amount):
-        self.energy -= amount
+        self.energy -= int(amount)
         if self.energy < constants.min_energy:
             self.energy = constants.min_energy
         self.save()
 
     def add_mood(self, amount):
-        self.mood += amount
+        self.mood += int(amount)
         if self.mood > constants.max_mood:
             self.mood = constants.max_mood
         self.save()
     
     def remove_mood(self, amount):
-        self.mood -= amount
+        self.mood -= int(amount)
         if self.mood < constants.min_mood:
             self.mood = constants.min_mood
         self.save()
