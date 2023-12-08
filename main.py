@@ -334,6 +334,9 @@ async def leaderboard_global(ctx):
             i += 1
         
         await ctx.respond(embed=embed)
+
+
+
         
 
 token = os.getenv("DISCORD_TOKEN")
