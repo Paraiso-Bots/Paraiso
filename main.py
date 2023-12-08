@@ -247,5 +247,94 @@ async def eat(ctx, food: Option(str, "What do you want to eat?", autocomplete=di
         embed = discord.Embed(title="Invalid Item", description=f"{food} is not available in the shop.", color=discord.Color.red())
         await ctx.respond(embed=embed)
 
+@bot.slash_command(name="sell", description="Sell something you don't need")
+async def Sell(ctx, item: Option(str, "What do you want to sell?", autocomplete=discord.utils.basic_autocomplete(get_shop_items))):
+    if not ifexists(ctx.author.id):
+        embed = discord.Embed(title="Join Paraiso first!", description="You aren't a member of Paraiso... yet. Please run `/join` to join the game.", color=discord.Color.red())
+        await ctx.respond(embed=embed)
+        return
+    if item in shop:
+        user = User(ctx.author.id)
+        user.load()
+        if item in user.inventory:
+            user.remove_item(item)
+            # Sold for the price + random between -50% and +50% of the price
+            price = shop[item]["price"] + random.randint(-shop[item]["price"] / 2, shop[item]["price"] / 2)
+            user.add_money(price)
+            user.save()
+            embed = discord.Embed(title="Sell Successful", description=f"You have sold {item} for {price} coins. You now have {user.money} coins", color= discord.Color.random())
+            await ctx.respond(embed=embed)
+        else:
+            embed = discord.Embed(title="Invalid Item", description=f"You do not have {item}.", color=discord.Color.red())
+            await ctx.respond(embed=embed)
+    else:
+        embed = discord.Embed(title="Invalid Item", description=f"{item} is not available in the shop.", color=discord.Color.red())
+        await ctx.respond(embed=embed)
+    
+leaderboard_com = bot.create_group(name="leaderboard", description="Check the leaderboard")
+
+@leaderboard_com.command(name="server", description="Check the leaderboard among all members of the server that are members of Paraiso")
+async def leaderboard_server(ctx):
+    with open("users.json", "r") as f:
+        users = json.load(f)
+        ids_int = []
+        for id in users.keys():
+            ids_int.append(int(id))
+        
+        sort = {}
+        for id in ids_int:
+            user = User(id)
+            user.load()
+            sort[user.id] = user.money
+        
+        # remove members that are not in the server
+        members = ctx.guild.members
+        for id in sort.keys():
+            if id not in [member.id for member in members]:
+                del sort[id]
+            
+        sort = dict(sorted(sort.items(), key=lambda item: item[1], reverse=True))
+        embed = discord.Embed(title="Top 10 Paraiso Members in this Server", description="", color=discord.Color.random())
+        i = 1
+        # Top 10
+        for id in sort.keys():
+            if i > 10:
+                break
+            user = User(id)
+            user.load()
+            embed.description += f"**{i}.** {bot.get_user(user.id).mention} - {sort[id]} coins\n"
+            i += 1
+        
+        await ctx.respond(embed=embed)
+
+@leaderboard_com.command(name="global", description="Check the leaderboard among all members of Paraiso")
+async def leaderboard_global(ctx):
+    with open("users.json", "r") as f:
+        users = json.load(f)
+        ids_int = []
+        for id in users.keys():
+            ids_int.append(int(id))
+        
+        sort = {}
+        for id in ids_int:
+            user = User(id)
+            user.load()
+            sort[user.id] = user.money
+        
+        sort = dict(sorted(sort.items(), key=lambda item: item[1], reverse=True))
+        embed = discord.Embed(title="Top 10 Paraiso Members", description="", color=discord.Color.random())
+        i = 1
+        # Top 10
+        for id in sort.keys():
+            if i > 10:
+                break
+            user = User(id)
+            user.load()
+            embed.description += f"**{i}.** {bot.get_user(user.id).name} - {sort[id]} coins\n"
+            i += 1
+        
+        await ctx.respond(embed=embed)
+        
+
 token = os.getenv("DISCORD_TOKEN")
 bot.run(token)
